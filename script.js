@@ -7,7 +7,9 @@ canvas.height = 500;
 
 let score = 0;
 let gameFrame = 0;
-ctx.font = '50px Georgia';
+ctx.font = '40px Georgia';
+let gameSpeed = 1;
+let gameOver = false
 
 
 // Mouse Interactivity
@@ -64,16 +66,16 @@ class Player{
             ctx.lineTo(mouse.x, mouse.y);
             ctx.stroke();
         }
-        ctx.fillStyle = 'green';
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.closePath();
-        ctx.fillRect(this.x,this.y,this.radius,10)
+        // ctx.fillStyle = 'green';
+        // ctx.beginPath();
+        // ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        // ctx.fill();
+        // ctx.closePath();
+        // ctx.fillRect(this.x,this.y,this.radius,10)
 
         ctx.save();
         ctx.translate(this.x, this.y);
-        ctx.rotate(this.angle.x);
+        ctx.rotate(this.angle);
         if(this.x >= mouse.x){
             ctx.drawImage(playerLeft, this.frameX * this.spriteWidth, this.frameY * this.spriteHeight, 
                 this.spriteWidth, this.spriteHeight, 0 - 60, 0 - 45, this.spriteWidth/4, 
@@ -93,6 +95,8 @@ const player = new Player();
 // Bubbles
 
 const bubblesArray = [];
+const bubbleImage = new Image();
+bubbleImage.src = 'bubble_pop.png';
 class Bubble{
     constructor(){
         this.x = Math.random() * canvas.width;
@@ -110,12 +114,13 @@ class Bubble{
         this.distance = Math.sqrt(dx*dx + dy*dy);
     }
     draw(){
-        ctx.fillStyle = 'blue';
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.closePath();
-        ctx.stroke();
+        // ctx.fillStyle = 'blue';
+        // ctx.beginPath();
+        // ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        // ctx.fill();
+        // ctx.closePath();
+        // ctx.stroke();
+        ctx.drawImage(bubbleImage,this.x - 65, this.y - 65, this.radius * 2.6 , this.radius * 2.6);
     }
 }
 
@@ -156,15 +161,101 @@ function handleBubbles(){
     }
 }
 
+//Repeating backgrounds
+
+const background = new Image();
+background.src = 'background1.jpg';
+
+function handleBackground(){
+    ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+}
+
+
+// Enemies
+
+const enemyImage = new Image();
+enemyImage.src = 'enemy1.png';
+
+class Enemy{
+    constructor(){
+        this.x = canvas.width + 200;
+        this.y = Math.random() * (canvas.height - 150) + 90;
+        this.radius = 60;
+        this.speed = Math.random() * 2 + 2;
+        this.frame = 0;
+        this.frameX = 0;
+        this.frameY = 0;
+        this.spriteWidth = 418;
+        this.spriteHeight = 397;
+    }
+    draw(){
+        // ctx.fillStyle = 'red';
+        // ctx.beginPath();
+        // ctx.arc(this.x, this.y, this.radius, 0 , Math.PI * 2);
+        // ctx.fill();
+        ctx.drawImage(enemyImage, this.x - 55, this.y - 55, this.radius * 1.75, this.radius * 1.75);
+    }
+    update(){
+        this.x -= this.speed;
+        if(this.x < 0 - this.radius * 2){
+            this.x = canvas.width + 200;
+            this.y = Math.random() * (canvas.height - 150) + 90;
+            this.speed = Math.random() * 2 + 2;
+        }
+        if(gameFrame % 5 ==0){
+            this.frame++;
+            if(this.frame >= 12) this.frame = 0;
+            if(this.frame == 3 ||this.frame == 7 || this.frame == 11){
+                this.frameX = 0;
+            }
+            else{
+                this.frameX++;
+            }
+            if(this.frame < 3) this.frameY = 0;
+            else if(this.frame < 7) this.frameY = 1;
+            else if(this.frame < 11) this.frameY = 2;
+            else this.frameY = 0;
+        }
+        // collision
+        const dx = this.x - player.x;
+        const dy = this.y - player.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if(distance < this.radius + player.radius){
+            handleGameOver();
+        }
+    }
+}
+
+function handleGameOver(){
+    ctx.fillStyle = 'white';
+    ctx.fillText('GAME OVER, you reached score: ' + score, 100, 250);
+    gameOver = true;
+}
+
+const enemy1 = new Enemy();
+function handleEnemies(){
+    enemy1.update();
+    enemy1.draw();
+}
+
+
+
 // Animation Lopp
 function animate(){
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    handleBackground();
     handleBubbles();
     player.update();
     player.draw();
+    handleEnemies();
     ctx.fillStyle = 'black';
     ctx.fillText('score: ' + score, 10, 50);
     gameFrame++;
-    requestAnimationFrame(animate);
+    if(!gameOver) requestAnimationFrame(animate);
+
 }
 animate();
+
+window.addEventListener('resize', function(){
+    canvasPosition = canvas.getBoundingClientRect();
+});
